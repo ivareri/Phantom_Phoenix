@@ -160,7 +160,7 @@ void CommanderInputController::Init(void)
 {
   g_BodyYOffset = 0;
   g_BodyYShift = 0;
-  command.begin(38400);
+//  command.begin(38400);
 
   ControlMode = WALKMODE;
   HeightSpeedMode = NORM_NORM;
@@ -185,6 +185,23 @@ void CommanderInputController::AllowControllerInterrupts(boolean fAllow)
 //==============================================================================
 void CommanderInputController::ControlInput(void)
 {
+#ifdef COMMANDER.PY_DEBUG
+  // Send debug info to commander.py
+  DBGSerial.print("Power: ");
+  DBGSerial.println(g_InControlState.fHexOn);
+  DBGSerial.print("ControlMode: ");
+  DBGSerial.println(ControlMode);
+  DBGSerial.print("Gait: ");
+  DBGSerial.println(g_InControlState.GaitType);
+  DBGSerial.print("BalanceMode: ");
+  DBGSerial.println(g_InControlState.BalanceMode);
+  DBGSerial.print("Body Y Offset: ");
+  DBGSerial.println(g_BodyYOffset);
+  DBGSerial.print("Speed Control: ");
+  DBGSerial.println(g_InControlState.SpeedControl);
+#endif
+
+
   // See if we have a new command available...
   if(command.ReadMsgs() > 0){
     // If we receive a valid message than turn robot on...

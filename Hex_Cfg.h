@@ -23,7 +23,7 @@
 //#define USEXBEE            // only allow to be defined on Megas...
 //#define USEPS2
 #define USECOMMANDER
-
+#define COMMANDER.PY_DEBUG
 // Global defines to control which configuration we are using.  Note: Only define one of these...
 // 
 // Which type of control(s) do you want to compile in
@@ -31,7 +31,7 @@
 #define XBEE_DEBUG_OUTPUT    // use our xbee serial class to do debug stuff
 #define DBGSerial XBDSerial
 #endif 
-//#define DBGSerial         Serial
+#define DBGSerial         Serial
 
 // Define other optional compnents to be included or not...
 
@@ -39,7 +39,7 @@
 // Code to allow Phantom to walk if it is turned upside down.
 // This code assumes that the tibias have been changed such that the 0 point has the legs
 // sticking straight out instead of at a 90 degree angle.
-#define OPT_WALK_UPSIDE_DOWN
+//#define OPT_WALK_UPSIDE_DOWN
 #ifdef OPT_WALK_UPSIDE_DOWN
 #define  IsRobotUpsideDown  (analogRead(0) < 500)
 #else
@@ -48,11 +48,11 @@
 //===================================================================
 // Debug Options
 #ifdef DBGSerial
-#define OPT_TERMINAL_MONITOR  
+//#define OPT_TERMINAL_MONITOR  
 //#define OPT_FIND_SERVO_OFFSETS    // Only useful if terminal monitor is enabled
 #endif
 
-#define DEBUG_IOPINS
+//#define DEBUG_IOPINS
 #ifdef DEBUG_IOPINS
 #define DebugToggle(pin)  {digitalWrite(pin, !digitalRead(pin));}
 #define DebugWrite(pin, state) {digitalWrite(pin, state);}
@@ -87,7 +87,7 @@
 #define PS2_CLK      A3
 
 // Define Analog pin and minimum voltage that we will allow the servos to run
-#define cVoltagePin  7      // Use our Analog pin jumper here...
+//#define cVoltagePin  7      // Use our Analog pin jumper here...
 #define CVADR1      1000  // VD Resistor 1 - reduced as only need ratio... 20K and 4.66K
 #define CVADR2      233   // VD Resistor 2
 #define cTurnOffVol  1000     // 10v
@@ -132,8 +132,11 @@
 #ifdef OPT_WALK_UPSIDE_DOWN
 #define cXXTibiaMin1    -1500
 #define cXXTibiaMax1    1500
+#elif TibiaMod
+#define cXXTibiaMin1    -900
+#define cXXTibiaMax1    900
 #else
-#define cXXTibiaMin1    -700
+#define cXXTibiaMin1   -550
 #define cXXTibiaMax1    900
 #endif
 
@@ -148,11 +151,11 @@
 
 
 #define cRMCoxaMin1    -700    //Mechanical limits of the Right Middle Leg, decimals = 1
-#define cRMCoxaMax1     700
-#define cRMFemurMin1     -900
-#define cRMFemurMax1     900
-#define cRMTibiaMin1    cXXTibiaMin1
-#define cRMTibiaMax1     cXXTibiaMax1
+#define cRMCoxaMax1    700
+#define cRMFemurMin1   -900
+#define cRMFemurMax1   900
+#define cRMTibiaMin1   cXXTibiaMin1
+#define cRMTibiaMax1   cXXTibiaMax1
 
 
 
