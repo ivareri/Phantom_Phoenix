@@ -93,6 +93,9 @@ enum {
 //=============================================================================
 Commander command = Commander();
 unsigned long g_ulLastMsgTime;
+#ifdef COMMANDER.PY_DEBUG
+unsigned long ulTimeLastReported = 0;
+#endif
 
 #ifdef USEMULTI
 //==============================================================================
@@ -199,6 +202,11 @@ void CommanderInputController::ControlInput(void)
   DBGSerial.println(g_BodyYOffset);
   DBGSerial.print("Speed Control: ");
   DBGSerial.println(g_InControlState.SpeedControl);
+  if (((millis() - ulTimeLastReported) > DISP_VOLTAGE_TIME)) {
+    DBGSerial.print("Voltage: ");
+    DBGSerial.println("g_ServoDriver.GetBatteryVoltage()");
+    ulTimeLastReported = millis();
+  }
 #endif
 
 
