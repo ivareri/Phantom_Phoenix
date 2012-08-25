@@ -1,6 +1,6 @@
 //====================================================================
 //Project Lynxmotion Phoenix
-//Description: 
+//Description:
 //    This is the hardware configuration file for the PhantomX robot.
 //    Will first define to use their commander unit.
 //
@@ -22,15 +22,17 @@
 //#define USEMULTI
 //#define USEXBEE            // only allow to be defined on Megas...
 //#define USEPS2
+
 #define USECOMMANDER
 #define COMMANDER.PY_DEBUG
+
 // Global defines to control which configuration we are using.  Note: Only define one of these...
-// 
+//
 // Which type of control(s) do you want to compile in
 #ifdef USEXBEE    // some options only valid if running with XBEE stuff
 #define XBEE_DEBUG_OUTPUT    // use our xbee serial class to do debug stuff
 #define DBGSerial XBDSerial
-#endif 
+#endif
 #define DBGSerial         Serial
 
 // Define other optional compnents to be included or not...
@@ -48,8 +50,9 @@
 //===================================================================
 // Debug Options
 #ifdef DBGSerial
-//#define OPT_TERMINAL_MONITOR  
+//#define OPT_TERMINAL_MONITOR
 //#define OPT_FIND_SERVO_OFFSETS    // Only useful if terminal monitor is enabled
+#define OPT_PYPOSE
 #endif
 
 //#define DEBUG_IOPINS
@@ -64,7 +67,7 @@
 
 // Also define that we are using the AX12 driver
 #define USE_AX12_DRIVER
-
+#define OPT_BACKGROUND_PROCESS    // The AX12 has a background process
 //==================================================================================================================================
 //==================================================================================================================================
 //==================================================================================================================================
@@ -81,7 +84,7 @@
 //--------------------------------------------------------------------
 //[Arbotix Pin Numbers]
 #define SOUND_PIN    1 //0xff        // Tell system we have no IO pin...
-#define PS2_DAT      A0        
+#define PS2_DAT      A0
 #define PS2_CMD      A1
 #define PS2_SEL      A2
 #define PS2_CLK      A3
