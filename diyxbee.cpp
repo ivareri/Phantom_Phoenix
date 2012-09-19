@@ -8,9 +8,9 @@
 #include <Wprogram.h> // Arduino 0022
 #endif
 #include "Hex_Globals.h"
-#define DEBUG
-#define DEBUG_OUT
-#define DEBUG_VERBOSE
+//#define DEBUG
+//#define DEBUG_OUT
+//#define DEBUG_VERBOSE
 
 #include "Hex_Globals.h"
 
@@ -712,7 +712,7 @@ _SetToValidDataAndReturn:
       if (w != g_diystate.wDBGDL) {
         g_diystate.wDBGDL = w;    // take care of warning, probably not needed
         //g_fDebugOutput = true;  // Let user control this...
-        MSound (SOUND_PIN, 2, 50, 1500, 50, 2500);
+        MSound (2, 50, 1500, 50, 2500);
       }
     }    
 
@@ -722,7 +722,7 @@ _SetToValidDataAndReturn:
     else if (g_diystate.bAPIPacket[bDataOffset + 0] == XBEE_DEBUG_DETACH) {
       g_diystate.wDBGDL = 0xffff;
       g_fDebugOutput = false;  // turn off debug output
-      MSound (SOUND_PIN, 2, 50, 2500, 50, 1500);
+      MSound (2, 50, 2500, 50, 1500);
     }    
 
     //-----------------------------------------------------------------------------

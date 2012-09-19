@@ -1,3 +1,4 @@
+
 #include <ax12.h>
 #include <Commander.h>
 
@@ -28,6 +29,7 @@
 #include <Arduino.h>
 #else
 #endif
+#include <EEPROM.h>
 #include <PS2X_lib.h>
 #include <pins_arduino.h>
 #include "Hex_Globals.h"
@@ -296,7 +298,7 @@ boolean         fWalking;            //  True if the robot are walking
 byte            bExtraCycle;          // Forcing some extra timed cycles for avoiding "end of gait bug"
 #define         cGPlimit 2           // GP=GaitPos testing different limits
 
-boolean        fRobotUpsideDown;    // Is the robot upside down?
+boolean        g_fRobotUpsideDown;    // Is the robot upside down?
 boolean        fRobotUpsideDownPrev;
 //=============================================================================
 // Function prototypes
@@ -390,7 +392,7 @@ void setup(){
   pinMode(A4, OUTPUT);
 #endif    
 #ifdef OPT_WALK_UPSIDE_DOWN
-  fRobotUpsideDown = false; //Assume off... 
+  g_fRobotUpsideDown = false; //Assume off... 
 #ifdef DBGSerial  
   DBGSerial.println(IsRobotUpsideDown, DEC);
 #endif  
@@ -420,12 +422,12 @@ void loop(void)
 
 #ifdef IsRobotUpsideDown
     if (!fWalking){// dont do this while walking
-    fRobotUpsideDown = IsRobotUpsideDown;    // Grab the current state of the robot... 
-    if (fRobotUpsideDown != fRobotUpsideDownPrev) {
+    g_fRobotUpsideDown = IsRobotUpsideDown;    // Grab the current state of the robot... 
+    if (g_fRobotUpsideDown != fRobotUpsideDownPrev) {
       // Double check to make sure that it was not a one shot error
-      fRobotUpsideDown = IsRobotUpsideDown;    // Grab the current state of the robot... 
-      if (fRobotUpsideDown != fRobotUpsideDownPrev) {
-        fRobotUpsideDownPrev = fRobotUpsideDown;
+      g_fRobotUpsideDown = IsRobotUpsideDown;    // Grab the current state of the robot... 
+      if (g_fRobotUpsideDown != fRobotUpsideDownPrev) {
+        fRobotUpsideDownPrev = g_fRobotUpsideDown;
 #ifdef DGBSerial        
         DBGSerial.println(fRobotUpsideDownPrev, DEC);
 #endif        
@@ -435,7 +437,7 @@ void loop(void)
   //  DBGSerial.println(analogRead(0), DEC);
 #endif
 #ifdef OPT_WALK_UPSIDE_DOWN
-  if (fRobotUpsideDown){
+  if (g_fRobotUpsideDown){
     g_InControlState.TravelLength.x = -g_InControlState.TravelLength.x;
     g_InControlState.BodyPos.x = -g_InControlState.BodyPos.x;
     g_InControlState.SLLeg.x = -g_InControlState.SLLeg.x;
@@ -446,6 +448,8 @@ void loop(void)
 #ifdef OPT_GPPLAYER
   //GP Player
   g_ServoDriver.GPPlayer();
+  if (g_ServoDriver.FIsGPSeqActive())
+    return;  // go back to process the next message
 #endif
 
   //Single leg control
@@ -513,7 +517,7 @@ void loop(void)
     LegPosZ[LegIndex]+g_InControlState.BodyPos.z-BodyFKPosZ+GaitPosZ[LegIndex] - TotalTransZ, LegIndex);
   }
 #ifdef OPT_WALK_UPSIDE_DOWN
-  if (fRobotUpsideDown){ //Need to set them back for not messing with the SmoothControl
+  if (g_fRobotUpsideDown){ //Need to set them back for not messing with the SmoothControl
     g_InControlState.BodyPos.x = -g_InControlState.BodyPos.x;
     g_InControlState.SLLeg.x = -g_InControlState.SLLeg.x;
     g_InControlState.BodyRot1.z = -g_InControlState.BodyRot1.z;
@@ -529,7 +533,7 @@ void loop(void)
   //Drive Servos
   if (g_InControlState.fHexOn) {
     if (g_InControlState.fHexOn && !g_InControlState.fPrev_HexOn) {
-      MSound(SOUND_PIN, 3, 60, 2000, 80, 2250, 100, 2500);
+      MSound(3, 60, 2000, 80, 2250, 100, 2500);
 #ifdef USEXBEE
       XBeePlaySounds(3, 60, 2000, 80, 2250, 100, 2500);
 #endif            
@@ -632,7 +636,7 @@ void loop(void)
       ServoMoveTime = 600;
       StartUpdateServos();
       g_ServoDriver.CommitServoDriver(ServoMoveTime);
-      MSound(SOUND_PIN, 3, 100, 2500, 80, 2250, 60, 2000);
+      MSound(3, 100, 2500, 80, 2250, 60, 2000);
 #ifdef USEXBEE            
       XBeePlaySounds(3, 100, 2500, 80, 2250, 60, 2000);
 #endif            
@@ -742,7 +746,7 @@ boolean CheckVoltage() {
 #ifdef DBGSerial
       DBGSerial.println(Voltage, DEC);
 #endif          
-      MSound(SOUND_PIN, 1, 45, 2000);
+      MSound( 1, 45, 2000);
     }
     delay(2000);
   }
@@ -1259,7 +1263,7 @@ void BodyFK (short PosX, short PosZ, short PosY, short RotationY, byte BodyIKLeg
   CosB4 = cos4;
 
 #ifdef OPT_WALK_UPSIDE_DOWN
-  if (fRobotUpsideDown)
+  if (g_fRobotUpsideDown)
     GetSinCos (-g_InControlState.BodyRot1.y+(-RotationY*c1DEC)+TotalYBal1) ;
   else
     GetSinCos (g_InControlState.BodyRot1.y+(RotationY*c1DEC)+TotalYBal1) ;
@@ -1374,7 +1378,7 @@ void LegIK (short IKFeetPosX, short IKFeetPosY, short IKFeetPosZ, byte LegIKLegN
   IKA24 = GetArcCos (T3 );
   //IKFemurAngle
 #ifdef OPT_WALK_UPSIDE_DOWN
-  if (fRobotUpsideDown)
+  if (g_fRobotUpsideDown)
     FemurAngle1[LegIKLegNr] = (long)(IKA14 + IKA24) * 180 / 3141 - 900 + CFEMURHORNOFFSET1(LegIKLegNr);//Inverted, up side down
   else
     FemurAngle1[LegIKLegNr] = -(long)(IKA14 + IKA24) * 180 / 3141 + 900 + CFEMURHORNOFFSET1(LegIKLegNr);//Normal
@@ -1387,7 +1391,7 @@ void LegIK (short IKFeetPosX, short IKFeetPosY, short IKFeetPosZ, byte LegIKLegN
   Temp2 = (2*(byte)pgm_read_byte(&cFemurLength[LegIKLegNr])*(byte)pgm_read_byte(&cTibiaLength[LegIKLegNr]));
   GetArcCos (Temp1 / Temp2);
 #ifdef OPT_WALK_UPSIDE_DOWN
-  if (fRobotUpsideDown)
+  if (g_fRobotUpsideDown)
     TibiaAngle1[LegIKLegNr] = (1800-(long)AngleRad4*180/3141);//Full range tibia, wrong side (up side down)
   else
     TibiaAngle1[LegIKLegNr] = -(1800-(long)AngleRad4*180/3141);//Full range tibia, right side (up side up)
@@ -1439,126 +1443,6 @@ void CheckAngles(void)
   }
 }
 
-
-
-//--------------------------------------------------------------------
-// Why are we faulting?
-//--------------------------------------------------------------------
-
-
-
-// BUGBUG:: Move to some library...
-//==============================================================================
-//    SoundNoTimer - Quick and dirty tone function to try to output a frequency
-//            to a speaker for some simple sounds.
-//==============================================================================
-void SoundNoTimer(uint8_t _pin, unsigned long duration,  unsigned int frequency)
-{
-#ifdef __AVR__
-  volatile uint8_t *pin_port;
-  volatile uint8_t pin_mask;
-#else
-  volatile uint32_t *pin_port;
-  volatile uint16_t pin_mask;
-#endif
-  long toggle_count = 0;
-  long lusDelayPerHalfCycle;
-
-  // Set the pinMode as OUTPUT
-  pinMode(_pin, OUTPUT);
-
-  pin_port = portOutputRegister(digitalPinToPort(_pin));
-  pin_mask = digitalPinToBitMask(_pin);
-
-  toggle_count = 2 * frequency * duration / 1000;
-  lusDelayPerHalfCycle = 1000000L/(frequency * 2);
-
-  // if we are using an 8 bit timer, scan through prescalars to find the best fit
-  while (toggle_count--) {
-    // toggle the pin
-    *pin_port ^= pin_mask;
-
-    // delay a half cycle
-    delayMicroseconds(lusDelayPerHalfCycle);
-  }    
-  *pin_port &= ~(pin_mask);  // keep pin low after stop
-
-}
-
-void MSound(uint8_t _pin, byte cNotes, ...)
-{
-  va_list ap;
-  unsigned int uDur;
-  unsigned int uFreq;
-  va_start(ap, cNotes);
-
-  while (cNotes > 0) {
-    uDur = va_arg(ap, unsigned int);
-    uFreq = va_arg(ap, unsigned int);
-    if (_pin != 0xff)
-      SoundNoTimer(_pin, uDur, uFreq);
-    cNotes--;
-  }
-  va_end(ap);
-}
-
-#ifdef OPT_TERMINAL_MONITOR
-//==============================================================================
-// TerminalMonitor - Simple background task checks to see if the user is asking
-//    us to do anything, like update debug levels ore the like.
-//==============================================================================
-boolean TerminalMonitor(void)
-{
-  byte szCmdLine[20];  // currently pretty simple command lines...
-  byte ich;
-  int ch;
-  // See if we need to output a prompt.
-  if (g_fShowDebugPrompt) {
-    DBGSerial.println(F("Arduino Phoenix Monitor"));
-    DBGSerial.println(F("D - Toggle debug on or off"));
-
-    // Let the Servo driver show it's own set of commands...
-    g_ServoDriver.ShowTerminalCommandList();
-    g_fShowDebugPrompt = false;
-  }
-
-  // First check to see if there is any characters to process.
-  if ((ich = DBGSerial.available())) {
-    ich = 0;
-    // For now assume we receive a packet of data from serial monitor, as the user has
-    // to click the send button...
-    for (ich=0; ich < sizeof(szCmdLine); ich++) {
-      ch = DBGSerial.read();        // get the next character
-      if ((ch == -1) || ((ch >= 10) && (ch <= 15)))
-        break;
-      szCmdLine[ich] = ch;
-    }
-    szCmdLine[ich] = '\0';    // go ahead and null terminate it...
-    DBGSerial.print(F("Serial Cmd Line:"));        
-    DBGSerial.write(szCmdLine, ich);
-    DBGSerial.println(F("!!!"));
-
-    // So see what are command is.
-    if (ich == 0) {
-      g_fShowDebugPrompt = true;
-    } 
-    else if ((ich == 1) && ((szCmdLine[0] == 'd') || (szCmdLine[0] == 'D'))) {
-      g_fDebugOutput = !g_fDebugOutput;
-      if (g_fDebugOutput) 
-        DBGSerial.println(F("Debug is on"));
-      else
-        DBGSerial.println(F("Debug is off"));
-    } 
-    else
-    {
-      g_ServoDriver.ProcessTerminalCommand(szCmdLine, ich);
-    }
-
-    return true;
-  }
-  return false;
-}
-#endif
 
 //--------------------------------------------------------------------
 // SmoothControl (From Zenta) -  This function makes the body 
@@ -1635,6 +1519,252 @@ void AdjustLegPositionsToBodyHeight(void)
 #endif // CNT_HEX_INITS
 
 }
+
+// BUGBUG:: Move to some library...
+//==============================================================================
+//    SoundNoTimer - Quick and dirty tone function to try to output a frequency
+//            to a speaker for some simple sounds.
+//==============================================================================
+#ifdef SOUND_PIN
+void SoundNoTimer(unsigned long duration,  unsigned int frequency)
+{
+#ifdef __AVR__
+  volatile uint8_t *pin_port;
+  volatile uint8_t pin_mask;
+#else
+  volatile uint32_t *pin_port;
+  volatile uint16_t pin_mask;
+#endif
+  long toggle_count = 0;
+  long lusDelayPerHalfCycle;
+
+  // Set the pinMode as OUTPUT
+  pinMode(SOUND_PIN, OUTPUT);
+
+  pin_port = portOutputRegister(digitalPinToPort(SOUND_PIN));
+  pin_mask = digitalPinToBitMask(SOUND_PIN);
+
+  toggle_count = 2 * frequency * duration / 1000;
+  lusDelayPerHalfCycle = 1000000L/(frequency * 2);
+
+  // if we are using an 8 bit timer, scan through prescalars to find the best fit
+  while (toggle_count--) {
+    // toggle the pin
+    *pin_port ^= pin_mask;
+
+    // delay a half cycle
+    delayMicroseconds(lusDelayPerHalfCycle);
+  }    
+  *pin_port &= ~(pin_mask);  // keep pin low after stop
+
+}
+
+void MSound(byte cNotes, ...)
+{
+  va_list ap;
+  unsigned int uDur;
+  unsigned int uFreq;
+  va_start(ap, cNotes);
+
+  while (cNotes > 0) {
+    uDur = va_arg(ap, unsigned int);
+    uFreq = va_arg(ap, unsigned int);
+    SoundNoTimer(uDur, uFreq);
+    cNotes--;
+  }
+  va_end(ap);
+}
+#else
+void MSound(byte cNotes, ...)
+{
+};
+#endif
+
+#ifdef OPT_TERMINAL_MONITOR
+extern void DumpEEPROMCmd(byte *pszCmdLine);
+
+//==============================================================================
+// TerminalMonitor - Simple background task checks to see if the user is asking
+//    us to do anything, like update debug levels ore the like.
+//==============================================================================
+boolean TerminalMonitor(void)
+{
+  byte szCmdLine[20];  // currently pretty simple command lines...
+  byte ich;
+  int ch;
+  // See if we need to output a prompt.
+  if (g_fShowDebugPrompt) {
+    DBGSerial.println(F("Arduino Phoenix Monitor"));
+    DBGSerial.println(F("D - Toggle debug on or off"));
+    DBGSerial.println(F("E - Dump EEPROM"));
+
+    // Let the Servo driver show it's own set of commands...
+    g_ServoDriver.ShowTerminalCommandList();
+    g_fShowDebugPrompt = false;
+  }
+
+  // First check to see if there is any characters to process.
+  if ((ich = DBGSerial.available())) {
+    ich = 0;
+    // For now assume we receive a packet of data from serial monitor, as the user has
+    // to click the send button...
+    for (ich=0; ich < sizeof(szCmdLine); ich++) {
+      ch = DBGSerial.read();        // get the next character
+      if ((ch == -1) || ((ch >= 10) && (ch <= 15)))
+        break;
+      szCmdLine[ich] = ch;
+    }
+    szCmdLine[ich] = '\0';    // go ahead and null terminate it...
+    DBGSerial.print(F("Serial Cmd Line:"));        
+    DBGSerial.write(szCmdLine, ich);
+    DBGSerial.println(F("!!!"));
+
+    // So see what are command is.
+    if (ich == 0) {
+      g_fShowDebugPrompt = true;
+    } 
+    else if ((ich == 1) && ((szCmdLine[0] == 'd') || (szCmdLine[0] == 'D'))) {
+      g_fDebugOutput = !g_fDebugOutput;
+      if (g_fDebugOutput) 
+        DBGSerial.println(F("Debug is on"));
+      else
+        DBGSerial.println(F("Debug is off"));
+    } 
+    else if (((szCmdLine[0] == 'e') || (szCmdLine[0] == 'E'))) {
+      DumpEEPROMCmd(szCmdLine);
+    }
+    else
+    {
+      g_ServoDriver.ProcessTerminalCommand(szCmdLine, ich);
+    }
+
+    return true;
+  }
+  return false;
+}
+
+//--------------------------------------------------------------------
+// DumpEEPROM
+//--------------------------------------------------------------------
+byte g_bEEPromDumpMode = 0;  // assume mode 0 - hex dump
+word g_wEEPromDumpStart = 0;  // where to start dumps from
+byte g_bEEPromDumpCnt = 16;  // how much to dump at a time
+
+void DumpEEPROM() {
+  byte i;
+  word wDumpCnt = g_bEEPromDumpCnt;
+
+  while (wDumpCnt) {
+    DBGSerial.print(g_wEEPromDumpStart, HEX);
+    DBGSerial.print(" - ");
+
+    // First in Hex
+    for (i = 0; (i < 16) && (i < wDumpCnt); i ++) {
+      byte b;
+      b = EEPROM.read(g_wEEPromDumpStart+i);
+      DBGSerial.print(b, HEX);
+      DBGSerial.print(" ");
+    }
+    // Next in Ascii
+    DBGSerial.print(" : ");
+    for (i = 0; (i < 16) && (i < wDumpCnt); i ++) {
+      byte b;
+      b = EEPROM.read(g_wEEPromDumpStart+i);
+      if ((b > 0x1f) && (b < 0x7f))
+        DBGSerial.write(b);
+      else
+        DBGSerial.print(".");
+    }
+    DBGSerial.println("");
+    g_wEEPromDumpStart += i;  // how many bytes we output
+    wDumpCnt -= i;            // How many more to go...
+  } 
+
+}
+//--------------------------------------------------------------------
+// GetCmdLineNum - passed pointer to pointer so we can update...
+//--------------------------------------------------------------------
+word GetCmdLineNum(byte **ppszCmdLine) {
+  byte *psz = *ppszCmdLine;
+  word w = 0;
+
+  // Ignore any blanks
+  while (*psz == ' ')
+    psz++;
+
+  // See if Hex value passed in
+  if ((*psz == '0') && ((*(psz+1) == 'x') || (*(psz+1) == 'X'))) {
+    // Hex mode
+    psz += 2;  // get over 0x
+    for (;;) {
+      if ((*psz >= '0') && (*psz <= '9'))
+        w = w * 16 + *psz++ - '0';
+      else if ((*psz >= 'a') && (*psz <= 'f'))
+        w = w * 16 + *psz++ - 'a' + 10;
+      else if ((*psz >= 'A') && (*psz <= 'F'))
+        w = w * 16 + *psz++ - 'A' + 10;
+      else
+        break;
+    }
+
+  }
+  else {
+    // decimal mode
+    while ((*psz >= '0') && (*psz <= '9'))
+      w = w * 10 + *psz++ - '0';
+  }
+  *ppszCmdLine = psz;    // update command line pointer
+  return w;
+
+}
+
+//--------------------------------------------------------------------
+// DumpEEPROMCmd
+//--------------------------------------------------------------------
+void DumpEEPROMCmd(byte *pszCmdLine) {
+  // first byte can be H for hex or W for words...
+  if (!*++pszCmdLine)  // Need to get past the command letter first...
+    DumpEEPROM();
+  else if ((*pszCmdLine == 'h') || (*pszCmdLine == 'H')) 
+    g_bEEPromDumpMode = 0;
+  else if ((*pszCmdLine == 'w') || (*pszCmdLine == 'W')) 
+    g_bEEPromDumpMode = 0;
+
+  else {
+    // First argument should be the start location to dump
+    g_wEEPromDumpStart = GetCmdLineNum(&pszCmdLine);
+
+    // If the next byte is an "=" may try to do updates...
+    if (*pszCmdLine == '=') {
+      // make sure we don't get stuck in a loop...
+      byte *psz = pszCmdLine;
+      word w;
+      while (*psz) {
+        w = GetCmdLineNum(&psz);
+        if (psz == pszCmdLine)
+          break;  // not valid stuff so bail!
+        pszCmdLine = psz;  // remember how far we got...
+
+        EEPROM.write(g_wEEPromDumpStart++, w & 0xff);
+      }   
+    }
+    else {
+      if (*pszCmdLine == ' ') { // A blank assume we have a count...
+        g_bEEPromDumpCnt = GetCmdLineNum(&pszCmdLine);
+      }
+    } 
+    DumpEEPROM();
+  }
+}
+
+#endif
+
+
+
+
+
+
+
 
 
 

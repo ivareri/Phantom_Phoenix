@@ -6,9 +6,11 @@
 #ifndef _HEX_GLOBALS_H_
 #define _HEX_GLOBALS_H_
 #include <stdarg.h>
+#include "BioloidEx.h"
 #include "Hex_Cfg.h"
 #include "ServoDriver.h"
 #include "InputController.h"
+#include <EEPROM.h>
 
 #ifdef USEXBEE
 #include "diyxbee.h"
@@ -56,9 +58,10 @@ extern INCONTROLSTATE   g_InControlState;		 // State information that controller
 //-----------------------------------------------------------------------------
 extern boolean          g_fDebugOutput;
 extern boolean          g_fEnableServos;      // Hack to allow me to turn servo processing off...
+extern boolean          g_fRobotUpsideDown;    // Is the robot upside down?
 
 
-extern void MSound(uint8_t _pin, byte cNotes, ...);
+extern void MSound(byte cNotes, ...);
 extern boolean CheckVoltage(void);
 
 void AdjustLegPositionsToBodyHeight(void);
