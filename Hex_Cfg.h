@@ -52,7 +52,7 @@
 #ifdef DBGSerial
 //#define OPT_TERMINAL_MONITOR
 //#define OPT_FIND_SERVO_OFFSETS    // Only useful if terminal monitor is enabled
-#define OPT_PYPOSE
+//#define OPT_PYPOSE
 #endif
 
 //#define DEBUG_IOPINS
